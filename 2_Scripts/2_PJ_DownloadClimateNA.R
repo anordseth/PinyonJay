@@ -5,7 +5,7 @@ library(dplyr)
 
 # Define working directories and file paths
 dir <- "D:\\SoRockies\\"
-mso_dir <- paste0(dir, "MSO\\")
+pj_dir <- paste0(dir, "PJ\\")
 exe_dir <- paste0(dir, "ClimateNA_v750\\")  # Update to your actual path
 exe <- "ClimateNA_v7.50.exe"  # Path to the ClimateNA executable
 

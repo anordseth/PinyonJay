@@ -6,12 +6,15 @@ pacman::p_load(plyr, here, tidyr, ggplot2, terra, sf, dplyr)
 ################################################################################
 
 # Define file paths for DEM and output directories using your preferred style
-dem_dir <- here("1_Data")  # Directory where DEM is stored
+dem_dir <- here("1_Data/ShapesTIFs")  # Directory where DEM is stored
 out_dir <- file.path(dem_dir, "cropped_dem")
 if (!dir.exists(out_dir)) dir.create(out_dir)
 
 # Load the clipped Southern Rockies DEM exported from GEE
-dem <- rast(file.path(dem_dir, "PinyonJay_30mDEM_SouthernRockies.tif"))
+dem <- rast(file.path(dem_dir, "SoRockiesDEM.tif"))
+
+plot(dem, main = "Digital Elevation Model of the Southern Rockies",
+     xlab = "Longitude", ylab = "Latitude", col = terrain.colors(100))
 
 # Print DEM and number of cells
 print(dem)
