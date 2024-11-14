@@ -10,15 +10,23 @@ dem_dir <- here("1_Data/ShapesTIFs")  # Directory where DEM is stored
 out_dir <- file.path(dem_dir, "cropped_dem")
 if (!dir.exists(out_dir)) dir.create(out_dir)
 
-# Load the clipped Southern Rockies DEM exported from GEE
-dem <- rast(file.path(dem_dir, "SoRockiesDEM.tif"))
+# Check the paths to ensure they are correct
+print(paste("DEM directory:", dem_dir))
+print(paste("Output directory:", out_dir))
 
+# Load the clipped Southern Rockies DEM exported from GEE
+dem_path <- file.path(dem_dir, "SoRockiesDEM.tif")
+if (!file.exists(dem_path)) stop("DEM file does not exist at the specified path.")
+dem <- rast(dem_path)
+
+# Plot the DEM to check if it loaded correctly
 plot(dem, main = "Digital Elevation Model of the Southern Rockies",
      xlab = "Longitude", ylab = "Latitude", col = terrain.colors(100))
 
 # Print DEM and number of cells
 print(dem)
 ncell <- ncell(dem)
+print(paste("Number of cells in DEM:", ncell))
 
 # Step 1: Create the grid (as an sf object)
 grids <- st_make_grid(st_as_sfc(st_bbox(ext(dem))), n = c(20, 20))  # Create a 20x20 grid
@@ -64,11 +72,13 @@ system.time({
 })
 
 # Remove any NULL elements (i.e., empty crops)
-cropped_dems[sapply(cropped_dems, is.null)] <- NULL
+cropped_dems <- cropped_dems[!sapply(cropped_dems, is.null)]
 
 # Check the number of cells in each cropped DEM
-(sapply(cropped_dems, ncell)) %>% summary()
-(ncell / sapply(cropped_dems, ncell)) %>% summary()
+print("Summary of cells in cropped DEMs:")
+print(summary(sapply(cropped_dems, ncell)))
+print("Summary of relative cell counts (total vs. cropped):")
+print(summary(ncell / sapply(cropped_dems, ncell)))
 
 ################################################################################
 #                            SAVE CROPPED DEMs
@@ -86,17 +96,15 @@ save_raster <- function(i) {
 }
 
 # Apply the save_raster function to all cropped DEMs
-lapply(1:length(cropped_dems), save_raster)
+lapply(seq_along(cropped_dems), save_raster)
 
 ################################################################################
 #                            CLEAN UP UNNECESSARY FILES
 ################################################################################
 
 # Remove .prj and .xml files (optional)
-list.files(out_dir, pattern = "prj", full.names = TRUE) %>% file.remove()
-list.files(out_dir, pattern = "xml", full.names = TRUE) %>% file.remove()
+print("Removing unnecessary .prj and .xml files in the output directory.")
+list.files(out_dir, pattern = "prj$", full.names = TRUE) %>% file.remove()
+list.files(out_dir, pattern = "xml$", full.names = TRUE) %>% file.remove()
 
-
-
-
-
+print("Script completed successfully.")

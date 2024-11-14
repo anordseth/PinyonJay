@@ -1,49 +1,38 @@
-library(parallel) 
-library(terra) 
-library(dplyr) 
+# Load required libraries
+library(parallel)
+library(terra)
+library(dplyr)
 
-# Define directories 
-dir <- "D:/LivingMaps/" 
-pj_dir <- file.path(dir,"PinyonJay/") 
-exe_dir <- file.path(dir, "ClimateNA_v750/")  # Path to ClimateNA executable 
+# Set up directories based on OS
+if (.Platform$OS.type == "unix") {  # macOS/Linux paths
+  base_dir <- "/Users/aen/Documents/ORISE Postdoc/LivingMaps"
+  pj_dir <- file.path(base_dir, "PinyonJay")
+  exe_dir <- file.path(base_dir, "ClimateNA_v750")  # Adjust if ClimateNA is installed elsewhere
+  exe <- "ClimateNA_v7.50.exe"  # Update if the ClimateNA version differs
+  
+  in_dir <- file.path(pj_dir, "1_Data/ShapesTIFs/cropped_dem/")
+  out_dir <- file.path(pj_dir, "1_Data/Climate/")
+} else {  # Windows paths
+  base_dir <- "D:\\"
+  pj_dir <- paste0(base_dir, "MSO\\")
+  exe_dir <- paste0(base_dir, "ClimateNA_v742\\")
+  exe <- "ClimateNA_v7.42.exe" 
+  
+  in_dir <- paste0(pj_dir, "Data\\DEM\\cropped_dem\\")
+  out_dir <- paste0(pj_dir, "Data\\Climate\\")
+}
 
-# Verify the executable path and DEM files 
-exe <- "ClimateNA_v7.50.exe" 
-in_dir <- file.path(pj_dir, "1_Data/cropped_dem/") 
-out_dir <-file.path(pj_dir, "1_Data/Climate/") 
+# Verify the ClimateNA executable and DEM directory
+if (!file.exists(file.path(exe_dir, exe))) stop("ClimateNA executable not found!")
+if (!dir.exists(in_dir)) stop("DEM input directory not found!")
 
-# Check for DEM files and define climate periods 
-in_files <- list.files(in_dir, pattern ="tif$", full.names = TRUE) 
+# List DEM files, excluding any with 'xml'
+in_files <- list.files(in_dir, pattern = "asc$", full.names = TRUE)
+in_files <- in_files[!grepl("xml", in_files)]
+if (length(in_files) == 0) stop("No DEM files found in input directory!")
 
-
-
-
-# # Load required packages
-# library(parallel)
-# library(terra)
-# library(dplyr)
-# 
-# # Define working directories and file paths
-# dir <- "D:\\LivingMaps\\"
-# pj_dir <- paste0(dir, "PinyonJay\\")
-# exe_dir <- paste0(dir, "ClimateNA_v750\\")  # Update to your actual path
-# exe <- "ClimateNA_v7.50.exe"  # Path to the ClimateNA executable
-# 
-# # Ensure ClimateNA executable exists
-# if (!file.exists(paste0(exe_dir, exe))) stop("ClimateNA executable not found!")
-# 
-# # Set input directory for DEM files
-# in_dir <- paste0(pj_dir, "1_Data\\cropped_dem\\")
-# if (!dir.exists(in_dir)) stop("DEM input directory not found!")
-# 
-# # List DEM files (assuming .tif files from GEE export)
-# in_files <- list.files(in_dir, pattern = "tif$", full.names = TRUE)
-# if (length(in_files) == 0) stop("No DEM files found in input directory!")
-# print(in_files)
-# 
-# # Set output directory for ClimateNA results
-# out_dir <- paste0(mso_dir, "Data\\Climate\\")
-# if (!dir.exists(out_dir)) dir.create(out_dir)
+# Create output directory if it doesn't exist
+if (!dir.exists(out_dir)) dir.create(out_dir)
 
 # Define climate periods for ClimateNA
 norm_years <- seq(1980, 2022, by = 10)
@@ -53,52 +42,52 @@ periods <- c(norm_years, "13GCMs_ensemble_ssp126_2011-2040.gcm")
 # Set MSY (Monthly/Season/Yearly) option for ClimateNA
 msy <- "M"
 
-# Detect available CPU cores
-cores <- detectCores() - 1  # Use one less core to leave some resources free
-if (cores <= 0) stop("No CPU cores available for parallel processing!")
+# Detect available CPU cores and set up for parallel processing
+cores <- min(length(periods) * 7, detectCores() - 1)  # To avoid overloading
 
 # Function to run ClimateNA on a DEM file for a specific period
 run_climateNA <- function(prd, out_dir_, msy, exe, exe_dir, in_file_) {
+  # Ensure ClimateNAr is loaded in each worker
+  library(ClimateNAr)
+  
   out <- strsplit(prd, "[.]")[[1]][1]
   
-  if (!dir.exists(paste0(out_dir_, "/", out, msy))) {
-    # Command to call the ClimateNA executable with the input DEM and period
-    cmd <- paste(
-      shQuote(paste0(exe_dir, exe)),  # Executable path
-      "-P", prd,                      # Climate period
-      "-M", msy,                      # Monthly/Season/Yearly output option
-      "-I", shQuote(in_file_),        # Input DEM file
-      "-O", shQuote(out_dir_)         # Output directory
+  if (!dir.exists(file.path(out_dir_, paste0(out, msy)))) {
+    # Execute ClimateNA command line
+    ClimateNA_cmdLine(
+      exe = exe,
+      wkDir = exe_dir,
+      period = prd,
+      MSY = msy,
+      inputFile = in_file_,
+      outputFile = out_dir_
     )
-    
-    # Run the command
-    system(cmd)
   }
 }
 
 # Main loop to process each DEM file
 system.time({
-  lapply(1:length(in_files), function(i) {
+  lapply(seq_along(in_files), function(i) {
+    # Display progress
+    div <- paste0(i, "/", length(in_files))
+    per <- signif((i / length(in_files)) * 100, 2)
+    cat(div, "(", per, "%)\r")
+    
+    # Set input and output file paths
     in_file_ <- in_files[i]
-    
-    # Create an output name for the DEM (based on the file name)
-    outname <- gsub(".tif", "", basename(in_file_))
-    outname <- gsub("dem", "mso", outname)
-    out_dir_ <- paste0(out_dir, outname)
-    
+    outname <- sub("dem", "mso", tools::file_path_sans_ext(basename(in_file_)))
+    out_dir_ <- file.path(out_dir, outname)
     if (!dir.exists(out_dir_)) dir.create(out_dir_)
     
-    if (!all(dir.exists(paste0(out_dir_, "/", gsub(".gcm", "M", gsub(".nrm", "M", periods)))))) {
-      
+    # Check if all period directories exist; if not, process them
+    if (!all(dir.exists(file.path(out_dir_, gsub(".gcm|.nrm", msy, periods))))) {
       # Run ClimateNA for each period in parallel
       clust <- makeCluster(cores)
-      parLapply(cl = clust, X = periods, fun = run_climateNA, 
-                out_dir_ = out_dir_, msy = msy, exe = exe, exe_dir = exe_dir, 
-                in_file_ = in_file_)
+      clusterEvalQ(clust, library(ClimateNAr))  # Load ClimateNAr on each cluster
+      parLapply(clust, periods, run_climateNA, out_dir_ = out_dir_, msy = msy, exe = exe, exe_dir = exe_dir, in_file_ = in_file_)
       stopCluster(clust)
     }
   })
 })
 
-# Output final message
 cat("ClimateNA processing complete for all DEM files.\n")
