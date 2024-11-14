@@ -1,29 +1,49 @@
-# Load required packages
-library(parallel)
-library(terra)
-library(dplyr)
+library(parallel) 
+library(terra) 
+library(dplyr) 
 
-# Define working directories and file paths
-dir <- "D:\\SoRockies\\"
-pj_dir <- paste0(dir, "PJ\\")
-exe_dir <- paste0(dir, "ClimateNA_v750\\")  # Update to your actual path
-exe <- "ClimateNA_v7.50.exe"  # Path to the ClimateNA executable
+# Define directories 
+dir <- "D:/LivingMaps/" 
+pj_dir <- file.path(dir,"PinyonJay/") 
+exe_dir <- file.path(dir, "ClimateNA_v750/")  # Path to ClimateNA executable 
 
-# Ensure ClimateNA executable exists
-if (!file.exists(paste0(exe_dir, exe))) stop("ClimateNA executable not found!")
+# Verify the executable path and DEM files 
+exe <- "ClimateNA_v7.50.exe" 
+in_dir <- file.path(pj_dir, "1_Data/cropped_dem/") 
+out_dir <-file.path(pj_dir, "1_Data/Climate/") 
 
-# Set input directory for DEM files
-in_dir <- paste0(mso_dir, "Data\\DEM\\cropped_dem\\")
-if (!dir.exists(in_dir)) stop("DEM input directory not found!")
+# Check for DEM files and define climate periods 
+in_files <- list.files(in_dir, pattern ="tif$", full.names = TRUE) 
 
-# List DEM files (assuming .tif files from GEE export)
-in_files <- list.files(in_dir, pattern = "tif$", full.names = TRUE)
-if (length(in_files) == 0) stop("No DEM files found in input directory!")
-print(in_files)
 
-# Set output directory for ClimateNA results
-out_dir <- paste0(mso_dir, "Data\\Climate\\")
-if (!dir.exists(out_dir)) dir.create(out_dir)
+
+
+# # Load required packages
+# library(parallel)
+# library(terra)
+# library(dplyr)
+# 
+# # Define working directories and file paths
+# dir <- "D:\\LivingMaps\\"
+# pj_dir <- paste0(dir, "PinyonJay\\")
+# exe_dir <- paste0(dir, "ClimateNA_v750\\")  # Update to your actual path
+# exe <- "ClimateNA_v7.50.exe"  # Path to the ClimateNA executable
+# 
+# # Ensure ClimateNA executable exists
+# if (!file.exists(paste0(exe_dir, exe))) stop("ClimateNA executable not found!")
+# 
+# # Set input directory for DEM files
+# in_dir <- paste0(pj_dir, "1_Data\\cropped_dem\\")
+# if (!dir.exists(in_dir)) stop("DEM input directory not found!")
+# 
+# # List DEM files (assuming .tif files from GEE export)
+# in_files <- list.files(in_dir, pattern = "tif$", full.names = TRUE)
+# if (length(in_files) == 0) stop("No DEM files found in input directory!")
+# print(in_files)
+# 
+# # Set output directory for ClimateNA results
+# out_dir <- paste0(mso_dir, "Data\\Climate\\")
+# if (!dir.exists(out_dir)) dir.create(out_dir)
 
 # Define climate periods for ClimateNA
 norm_years <- seq(1980, 2022, by = 10)
