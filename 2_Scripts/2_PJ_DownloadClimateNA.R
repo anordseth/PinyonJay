@@ -1,7 +1,11 @@
+install.packages("devtools")
+install.packages('path/ClimateNAr.zip', repos=NULL, type='source')
+
 # Load required libraries
 library(parallel)
 library(terra)
 library(dplyr)
+library(climatenaR)
 
 # Set up directories based on OS
 if (.Platform$OS.type == "unix") {  # macOS/Linux paths
@@ -13,17 +17,17 @@ if (.Platform$OS.type == "unix") {  # macOS/Linux paths
   in_dir <- file.path(pj_dir, "1_Data/ShapesTIFs/cropped_dem/")
   out_dir <- file.path(pj_dir, "1_Data/Climate/")
 } else {  # Windows paths
-  base_dir <- "D:\\"
-  pj_dir <- paste0(base_dir, "MSO\\")
-  exe_dir <- paste0(base_dir, "ClimateNA_v742\\")
-  exe <- "ClimateNA_v7.42.exe" 
+  base_dir <- "C:\\Users\\annanordseth\\Documents\\"
+  pj_dir <- paste0(base_dir, "LivingMaps\\PinyonJay\\")
+  exe_dir <- paste0(base_dir, "ClimateNA_v750\\")
+  exe <- "ClimateNA_v7.50.exe" 
   
-  in_dir <- paste0(pj_dir, "Data\\DEM\\cropped_dem\\")
-  out_dir <- paste0(pj_dir, "Data\\Climate\\")
+  in_dir <- paste0(pj_dir, "1_Data\\ShapesTIFs\\cropped_dem\\")
+  out_dir <- paste0(pj_dir, "1_Data\\Climate\\")
 }
 
 # Verify the ClimateNA executable and DEM directory
-if (!file.exists(file.path(exe_dir, exe))) stop("ClimateNA executable not found!")
+if (!file.exists(file.path("C:\\Users\\annanordseth\\Documents\\LivingMaps\\ClimateNA_v750"))) stop("ClimateNA executable not found!")
 if (!dir.exists(in_dir)) stop("DEM input directory not found!")
 
 # List DEM files, excluding any with 'xml'
@@ -42,19 +46,19 @@ periods <- c(norm_years, "13GCMs_ensemble_ssp126_2011-2040.gcm")
 # Set MSY (Monthly/Season/Yearly) option for ClimateNA
 msy <- "M"
 
-# Detect available CPU cores and set up for parallel processing
-cores <- min(length(periods) * 7, detectCores() - 1)  # To avoid overloading
+detectCores()
+(cores <- length(periods) * 7)
 
 # Function to run ClimateNA on a DEM file for a specific period
-run_climateNA <- function(prd, out_dir_, msy, exe, exe_dir, in_file_) {
-  # Ensure ClimateNAr is loaded in each worker
-  library(ClimateNAr)
+func <- function(prd, out_dir_, msy, exe, exe_dir, in_file_) {
+  library(climatenaR)
+  library(terra)
   
   out <- strsplit(prd, "[.]")[[1]][1]
   
-  if (!dir.exists(file.path(out_dir_, paste0(out, msy)))) {
-    # Execute ClimateNA command line
-    ClimateNA_cmdLine(
+  if (!dir.exists(paste0(out_dir_, "\\", out, msy))) {
+
+      ClimateNA_cmdLine(
       exe = exe,
       wkDir = exe_dir,
       period = prd,
@@ -65,26 +69,28 @@ run_climateNA <- function(prd, out_dir_, msy, exe, exe_dir, in_file_) {
   }
 }
 
-# Main loop to process each DEM file
 system.time({
-  lapply(seq_along(in_files), function(i) {
-    # Display progress
+  lapply(1:length(in_files), function(i){
     div <- paste0(i, "/", length(in_files))
-    per <- signif((i / length(in_files)) * 100, 2)
-    cat(div, "(", per, "%)\r")
+    per <- signif((i/length(in_files))*100, 2)
+    per <- paste0("(", per, "%)")
+    cat(div, per, "\r")
     
-    # Set input and output file paths
     in_file_ <- in_files[i]
-    outname <- sub("dem", "mso", tools::file_path_sans_ext(basename(in_file_)))
-    out_dir_ <- file.path(out_dir, outname)
-    if (!dir.exists(out_dir_)) dir.create(out_dir_)
     
-    # Check if all period directories exist; if not, process them
-    if (!all(dir.exists(file.path(out_dir_, gsub(".gcm|.nrm", msy, periods))))) {
-      # Run ClimateNA for each period in parallel
+    outname <- strsplit(in_file_, "\\\\")[[1]][6]
+    outname <- gsub(".asc", "", outname)
+    outname <- gsub("dem", "pj", outname)
+    out_dir_ <- paste0(out_dir, outname)
+    if(!dir.exists(out_dir_)) dir.create(out_dir_)
+    
+    if(!all(dir.exists(paste0(out_dir_, "\\", gsub(".gcm", "M", (gsub(".nrm", "M", periods))))))){
+      
+      # Loop through each period in parallel
       clust <- makeCluster(cores)
-      clusterEvalQ(clust, library(ClimateNAr))  # Load ClimateNAr on each cluster
-      parLapply(clust, periods, run_climateNA, out_dir_ = out_dir_, msy = msy, exe = exe, exe_dir = exe_dir, in_file_ = in_file_)
+      parLapply(cl = clust, X = periods, fun = func, 
+                out_dir_ = out_dir_, msy = msy, exe = exe, exe_dir = exe_dir, 
+                in_file_ = in_file_)
       stopCluster(clust)
     }
   })
