@@ -130,3 +130,9 @@ list.files(out_dir, pattern = "prj$", full.names = TRUE) %>% file.remove()
 list.files(out_dir, pattern = "xml$", full.names = TRUE) %>% file.remove()
 
 print("All done!")
+
+
+
+
+
+
