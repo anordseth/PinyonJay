@@ -2,3 +2,13 @@
 .Rhistory
 .RData
 .Ruserdata
+1_Data/*
+pwd_Data/StateDEMs/
+.DS_Store
+PJRangeBB.csv
+PJRangeBB.geojson
+1_Data/ShapesTIFs/cropped_dem/
+*.tmp
+*.log
+*.zip
+*.tif
