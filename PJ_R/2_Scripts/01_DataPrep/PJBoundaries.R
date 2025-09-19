@@ -18,13 +18,13 @@ pj_range_buff_proj_60km <- st_buffer(pj_range_proj, dist = 60000)
 # Reproject back to WGS84
 pj_range_buff_60km <- st_transform(pj_range_buff_proj_60km, crs = 4326)
 
-# Compare buffers 
+# Look at buffers 
 ggplot() +
   geom_sf(data = pj_range, fill = NA, color = "black") +
   geom_sf(data = pj_range_buff_60km, fill = NA, color = "red", size = 1) +
   # geom_sf(data = pj_points, color = "purple", alpha = 0.25) +
-  coord_sf(xlim = st_bbox(pj_range_buff_50km)[c("xmin", "xmax")],
-           ylim = st_bbox(pj_range_buff_50km)[c("ymin", "ymax")]) +
+  coord_sf(xlim = st_bbox(pj_range_buff_60km)[c("xmin", "xmax")],
+           ylim = st_bbox(pj_range_buff_60km)[c("ymin", "ymax")]) +
   theme_minimal()
 
 
@@ -63,8 +63,10 @@ bcrs <- st_read("1_Data/Boundaries/BCRs.gdb") %>%
 bcr_clip <- st_intersection(bcrs, pj_range_buff_60km)
 
 # Load US boundaries & states
-us_outline <- rnaturalearth::ne_countries(country = "United States of America", returnclass = "sf")
-us_states <- rnaturalearth::ne_states(country = "United States of America", returnclass = "sf")
+us_outline <- rnaturalearth::ne_countries(country = "United States of America", 
+                                          returnclass = "sf")
+us_states <- rnaturalearth::ne_states(country = "United States of America", 
+                                      returnclass = "sf")
 
 # Clip to US
 bcr_clip2 <- st_intersection(bcr_clip, us_outline)
@@ -104,8 +106,8 @@ pj_bcr_counts2 <- pjpts_bcrs2 %>%
 ggplot() +
   geom_sf(data = bcr_clip3, fill = "lightblue", color = "blue", alpha = 0.5) +
   geom_sf(data = pjpts_bcrs2, color = "purple", alpha = 0.2) +
-  coord_sf(xlim = st_bbox(pj_range_buff_50km)[c("xmin", "xmax")],
-           ylim = st_bbox(pj_range_buff_50km)[c("ymin", "ymax")]) +
+  coord_sf(xlim = st_bbox(pj_range_buff_60km)[c("xmin", "xmax")],
+           ylim = st_bbox(pj_range_buff_60km)[c("ymin", "ymax")]) +
   theme_minimal()
 
 

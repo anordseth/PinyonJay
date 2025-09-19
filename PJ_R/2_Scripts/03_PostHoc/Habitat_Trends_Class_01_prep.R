@@ -10,13 +10,13 @@ library(tidyverse)
 # Set working directory to where the Drive export is downloaded
 base_dir <- "/Users/aen/Documents/ORISE_Postdoc/PinyonJayMacroecology/LivingMaps/PinyonJay/PJ_R"
 spp <- "PinyonJay"
-spp_model <- "FebJul_1500m_FSM2"
+spp_model <- "FebJul_1500m_FSM"
 
-ht_in_dir <- file.path(base_dir, "3_ModelOutputs", spp_model, "habitatAreaClass")
+(ht_in_dir <- file.path(base_dir, "3_ModelOutputs", spp_model, "habitatAreaClass"))
 ht_out_dir <- file.path(base_dir, "4_Analysis", spp_model, "Habitat_Trends")
 if (!dir.exists(ht_out_dir)) dir.create(ht_out_dir, recursive = TRUE)
 
-(hab_trend_fn <- file.path(ht_in_dir, "Habitat_area_Trends_classified2.csv"))
+(hab_trend_fn <- file.path(ht_in_dir, "Habitat_area_Trends_classified_091225.csv"))
 # (hab_trend_fn <- file.path(ht_in_dir, "Habitat_area_Trends_classified_ALLBCRS.csv"))
 out_fn <- file.path(ht_out_dir, "Habitat_Trends_classified_prepped.rds")
 

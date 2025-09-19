@@ -13,7 +13,7 @@ library(cowplot)
 # ----------------------------X
 
 spp <- "PinyonJay"
-spp_model <- "FebJul_1500m"
+spp_model <- "FJ_1500_FSM_Buff"
 # pts_type <- "R10_rand"
 
 # Full region names (10 BCRs)

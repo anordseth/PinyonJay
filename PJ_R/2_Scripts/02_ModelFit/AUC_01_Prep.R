@@ -18,7 +18,7 @@ library(pROC)
 # ------------------------
 
 spp <- "PinyonJay"
-ptsDates <- "FebJul_1500m_FSM" 
+ptsDates <- "FJ_1500_FSM_Buff" 
 inputFile <- "modelProjStats"
 
 base_dir <- "/Users/aen/Documents/ORISE_Postdoc/PinyonJayMacroecology/LivingMaps/PinyonJay/PJ_R"
@@ -58,7 +58,7 @@ if (include_cross_region) {
 
 prep_proj_stats <- function(df) {
   df %>%
-    dplyr::select(-`system:index`, -.geo) %>%
+    # dplyr::select(-`system:index`, -.geo) %>%
     dplyr::relocate(fold, modelFold, trainRegion, projRegion, useAvail, .before = 1) %>%
     dplyr::select(fold, modelFold, trainRegion, projRegion, useAvail, RFprob) %>%
     mutate(trainRegion = factor(trainRegion),
@@ -74,12 +74,25 @@ if (include_cross_region) {
 # Calculate AUC separately
 # ------------------------
 
+# calc_auc <- function(df) {
+#   df %>%
+#     filter(fold == modelFold) %>%
+#     group_by(trainRegion, projRegion, fold) %>%
+#     nest(data = c(useAvail, RFprob)) %>%
+#     mutate(auc = map_dbl(data, ~ auc(.x$useAvail, .x$RFprob, quiet = TRUE))) %>%
+#     ungroup()
+# }
+
 calc_auc <- function(df) {
   df %>%
     filter(fold == modelFold) %>%
     group_by(trainRegion, projRegion, fold) %>%
     nest(data = c(useAvail, RFprob)) %>%
-    mutate(auc = map_dbl(data, ~ auc(.x$useAvail, .x$RFprob, quiet = TRUE))) %>%
+    mutate(auc = map_dbl(data, ~ {
+      y <- .x$useAvail
+      if (length(unique(y)) < 2) return(NA_real_)
+      auc(y, .x$RFprob, quiet = TRUE)
+    })) %>%
     ungroup()
 }
 
@@ -93,8 +106,8 @@ summarize_auc <- function(df) {
   df %>%
     group_by(trainRegion, projRegion) %>%
     dplyr::summarise(n = n(),
-                     mean_auc = mean(auc),
-                     sd_auc = sd(auc), .groups = "drop") %>%
+                     mean_auc = mean(auc, na.rm = TRUE),
+                     sd_auc = sd(auc, na.rm = TRUE), .groups = "drop") %>%
     mutate(ci = 1.96 * (sd_auc / sqrt(n)),
            minus = mean_auc - ci,
            plus = mean_auc + ci)

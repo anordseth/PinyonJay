@@ -13,7 +13,7 @@ library(tidyverse)
 # ---------------X
 
 spp <- "PinyonJay"
-spp_model <- "FebJul_1500m_FSM"
+spp_model <- "FJ_1500_FSM_Buff"
 
 rgn_names <- c("BCR9", "BCR10", "BCR15", "BCR16", "BCR17", "BCR18", "BCR32", 
                "BCR33", "BCR34", "BCR35")
@@ -61,7 +61,7 @@ p_oob <- ggplot(oob_summary, aes(x = train_region, fill = train_region)) +
                 width = 0.3, position = position_dodge(width = 0.9)) +
   scale_fill_manual(values = rgn_pal) +
   # ylim(c(0, 0.1)) +
-  coord_cartesian(ylim = c(0, 0.075)) +
+  coord_cartesian(ylim = c(0, 0.17)) +
   theme_minimal() +
   theme(title = element_text(size = 9),
         strip.background = element_rect(fill = "white"),

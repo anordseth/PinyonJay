@@ -22,7 +22,7 @@ library(glue)
 # ------------------------
 
 spp <- "PinyonJay"
-spp_model <- "FebJul_1500m_FSM"
+spp_model <- "FJ_1500_FSM_Buff"
 
 output <- "modelFitStats"
 

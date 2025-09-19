@@ -9,13 +9,33 @@
 
 library(tidyverse)
 library(cowplot)
+library(ggplot2)
+library(grid) 
+
+theme_pinyon <- function() {
+  theme_bw() +
+    theme(
+      title = element_text(size = 9),
+      axis.title.x = element_text(size = 8, margin = margin(t = 6)),  # space above x-axis title
+      axis.title.y = element_text(size = 8, margin = margin(r = 6)),  # space to the right of y-axis title
+      axis.text = element_text(size = 7),
+      strip.text = element_text(size = 8),
+      strip.background = element_rect(fill = "white"),
+      legend.title = element_text(size = 8),
+      legend.text = element_text(size = 7),
+      legend.background = element_rect(color = "black", linewidth = 0.25),
+      legend.key.size = unit(0.1, "in"),
+      panel.grid.major.x = element_blank()
+    )
+}
+
 
 # ------------------------
 # Set up file paths
 # ------------------------
 
 spp <- "PinyonJay"
-ptsDates <- "FebJul_1500m_FSM"
+ptsDates <- "FJ_1500_FSM_Buff"
 
 base_dir <- "/Users/aen/Documents/ORISE_Postdoc/PinyonJayMacroecology/LivingMaps/PinyonJay/PJ_R"
 (auc_in_dir2 <- file.path(base_dir, "4_Analysis", ptsDates))
@@ -54,17 +74,18 @@ auc_p <- ggplot(auc_within, aes(x = projRegion, fill = trainRegion)) +
                 linewidth = 0.5, width = 0.3,
                 position = position_dodge(width = 0.9)) +
   scale_fill_manual(values = rgn_pal) +
-  theme_bw() +
-  theme(title = element_text(size = 9),
-        strip.background = element_rect(fill = "white"),
-        axis.title = element_text(size = 8),
-        axis.text = element_text(size = 7),
-        strip.text = element_text(size = 8),
-        legend.background = element_rect(color = "black", linewidth = 0.25),
-        legend.key.size = unit(0.1, "in"),
-        legend.title = element_text(size = 8),
-        legend.text = element_text(size = 7),
-        panel.grid.major.x = element_blank()) +
+  theme_pinyon() +
+  # theme_bw() +
+  # theme(title = element_text(size = 9),
+  #       strip.background = element_rect(fill = "white"),
+  #       axis.title = element_text(size = 8),
+  #       axis.text = element_text(size = 7),
+  #       strip.text = element_text(size = 8),
+  #       legend.background = element_rect(color = "black", linewidth = 0.25),
+  #       legend.key.size = unit(0.1, "in"),
+  #       legend.title = element_text(size = 8),
+  #       legend.text = element_text(size = 7),
+  #       panel.grid.major.x = element_blank()) +
   labs(y = "AUC", x = "Projected Region", fill = "Training Region")
 auc_p
 
@@ -84,28 +105,31 @@ auc_heatmap <- ggplot(auc_all, aes(x = projRegion, y = trainRegion, fill = mean_
   geom_tile(color = "white") +
   geom_text(aes(label = round(mean_auc, 2)), size = 2.5) +
   scale_fill_gradient2(low = "#fef0d9", mid = "#fc8d59", high = "#b30000", midpoint = 0.75, na.value = "#cccccc") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
-        axis.text.y = element_text(size = 7),
-        axis.title = element_text(size = 8),
-        legend.title = element_text(size = 8),
-        legend.text = element_text(size = 7)) +
-  labs(x = "Projected Region", y = "Training Region", fill = "Mean AUC")
-
-# Plot with static midpoint (0.75)
-auc_heatmap <- ggplot(auc_all, aes(x = projRegion, y = trainRegion, fill = mean_auc)) +
-  geom_tile(color = "white") +
-  geom_text(aes(label = format(round(mean_auc, 2), nsmall = 2)), size = 2.5) +
-  scale_fill_gradient2(low = "#fff5eb", mid = "#fc8d59", high = "#990000", 
-                       midpoint = 0.75) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
-        axis.text.y = element_text(size = 7),
-        axis.title = element_text(size = 8),
-        legend.title = element_text(size = 8),
-        legend.text = element_text(size = 7)) +
+  theme_pinyon() +
+  # theme_minimal() +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
+  #       axis.text.y = element_text(size = 7),
+  #       axis.title = element_text(size = 8),
+  #       legend.title = element_text(size = 8),
+  #       legend.text = element_text(size = 7)) +
   labs(x = "Projected Region", y = "Training Region", fill = "Mean AUC")
 auc_heatmap
+
+
+# # Plot with static midpoint (0.75)
+# auc_heatmap <- ggplot(auc_all, aes(x = projRegion, y = trainRegion, fill = mean_auc)) +
+#   geom_tile(color = "white") +
+#   geom_text(aes(label = format(round(mean_auc, 2), nsmall = 2)), size = 2.5) +
+#   scale_fill_gradient2(low = "#fff5eb", mid = "#fc8d59", high = "#990000", 
+#                        midpoint = 0.75) +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 7),
+#         axis.text.y = element_text(size = 7),
+#         axis.title = element_text(size = 8),
+#         legend.title = element_text(size = 8),
+#         legend.text = element_text(size = 7)) +
+#   labs(x = "Projected Region", y = "Training Region", fill = "Mean AUC")
+# auc_heatmap
 
 ggsave("AUC_heatmap.png", plot = auc_heatmap, path = auc_out_dir2,
        width = 6, height = 5.5, units = "in", dpi = 900)
